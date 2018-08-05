@@ -11,6 +11,8 @@ import java.util.Random;
 
 import org.bouncycastle.math.ec.ECPoint;
 
+import zkLedger.OrProof.OrProofIndex;
+
 public class Transaction {
     private Asset asset;
     private LocalDateTime time;
@@ -59,24 +61,29 @@ public class Transaction {
                     BigInteger amountReceived;
                     BigInteger recommitValue;
                     BigInteger[] poaSecretMessage;
+                    OrProofIndex knownRecommitType;
                     if (participants.get(currentIndex).equals(senderBank)) {
                         amountReceived = amount.negate();
                         recommitValue = senderTotalAsset;
                         poaSecretMessage = new BigInteger[] {secretKey};
+                        knownRecommitType = OrProofIndex.FIRST;
                     }else if(participants.get(currentIndex).equals(receiverBank)) {
                         amountReceived = amount;
                         recommitValue = amount;
                         poaSecretMessage = new BigInteger[] {amount, r, rPrime};
+                        knownRecommitType = OrProofIndex.SECOND;
                     }else {
                         amountReceived = BigInteger.ZERO;
                         recommitValue = BigInteger.ZERO;
                         poaSecretMessage = new BigInteger[] {BigInteger.ZERO, r, rPrime};
+                        knownRecommitType = OrProofIndex.SECOND;
                     }
 
                     // create entry for current bank
                     Entry entry = new Entry(ledger, asset, participants.get(currentIndex), 
                                             amountReceived, randomness,
-                                            recommitValue, randomnessPrime, poaSecretMessage);
+                                            recommitValue, randomnessPrime, poaSecretMessage, 
+                                            knownRecommitType);
                     record.put(participants.get(currentIndex), entry);
 
                 }
@@ -104,7 +111,7 @@ public class Transaction {
      * @return true if and only if all entries are consistent, have enough asset, and the entire transaction 
      *         have overall balance 0.
      */
-    public boolean verify() {
+    public boolean verify(Ledger ledger) {
         List<Boolean> allResult = new ArrayList<>();
         List<Thread> oneThreadPerEntry = new ArrayList<>();
         ECPoint totalCM = SECP256K1.CURVE.getInfinity();
@@ -113,7 +120,7 @@ public class Transaction {
             Thread thread = new Thread(
                 new Runnable() {
                     public void run(){
-                        boolean result = record.get(bank).verify();
+                        boolean result = record.get(bank).verify(ledger);
                         synchronized(allResult) {
                             allResult.add(result);
                         }

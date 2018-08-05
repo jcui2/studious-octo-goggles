@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -35,23 +36,29 @@ public class SigmaProtocol {
     }
     
     private static BigInteger inputToRandomness(ECPoint[] firstMessage, ECPoint[] secretImage, ECPoint[] additionalInput) {
-        final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-        try {
-            for (ECPoint[] ecPointArray: new ECPoint[][] {firstMessage, secretImage, additionalInput}) {
-                for (ECPoint i: ecPointArray) {
-                    byteArray.write(i.getEncoded(true));
-                }
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+//        final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+//        try {
+//            for (ECPoint[] ecPointArray: new ECPoint[][] {firstMessage, secretImage, additionalInput}) {
+//                for (ECPoint i: ecPointArray) {
+//                    byteArray.write(i.getEncoded(true));
+//                }
+//            }
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
+//        
+//        
+//        
+//        synchronized(SECP256K1.CURVE) {
+//            byte[] inputInByte = SECP256K1.SHA256.digest(byteArray.toByteArray());
+//            return new BigInteger(1, inputInByte);
+//        }
+       
         
-        
-        
-        synchronized(SECP256K1.CURVE) {
-            byte[] inputInByte = SECP256K1.SHA256.digest(byteArray.toByteArray());
-            return new BigInteger(1, inputInByte);
-        }
+        ECPoint[] concatArray = Stream.concat(Stream.concat(Arrays.stream(firstMessage), Arrays.stream(secretImage)), 
+                                              Arrays.stream(additionalInput))
+                                              .toArray(ECPoint[]::new);
+        return SECP256K1.ecPointArrayToRandomness(concatArray);
         
         
     }

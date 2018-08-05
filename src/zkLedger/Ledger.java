@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -17,6 +18,9 @@ public class Ledger{
                                              SECP256K1.SHA256.digest("0".getBytes(StandardCharsets.UTF_8)));
    public static final ECPoint GENERATOR_H = SECP256K1.pointDecompressFromString(
                                              SECP256K1.SHA256.digest("1".getBytes(StandardCharsets.UTF_8)));
+   
+   public static final Function<BigInteger[], ECPoint> PEDERSON = (input) 
+                                                                     -> (GENERATOR_G.multiply(input[0])).add(GENERATOR_H.multiply(input[1]));
     
     private final List<Bank> participants; //list of banks currently participating in transactions
     private final List<Transaction> transactions; //list of transaction record ordered by time --> synchronized!!!
@@ -90,7 +94,7 @@ public class Ledger{
 //            }
 //        }
         
-         if (!transaction.verify()) {
+         if (!transaction.verify(this)) {
              System.out.println("Proof Error");
              return;
          }
@@ -98,8 +102,17 @@ public class Ledger{
         System.out.println("proof verified, adding transaction to ledger"); 
          
         transactions.add(transaction);
-        if (transactionsByAsset.containsKey(asset)) { //update cache
+        if (transactionsByAsset.containsKey(asset)) { 
             transactionsByAsset.get(asset).add(transaction);
+       
+        }else { 
+            List<Transaction> transactionsOfThisAsset = new ArrayList<Transaction>();
+            transactionsOfThisAsset.add(transaction);
+            transactionsByAsset.put(asset, transactionsOfThisAsset);
+
+        }
+        
+        if (cmCache.containsKey(asset)) {
             Map<Bank, ECPoint> oldCache = cmCache.get(asset);
             Map<Bank, ECPoint> oldTokenCache = tokenCache.get(asset);
             for (Bank bank: this.participants) {
@@ -109,23 +122,18 @@ public class Ledger{
                 ECPoint newTokenCache = oldTokenCache.getOrDefault(bank, SECP256K1.CURVE.getInfinity()).add(transaction.getEntry(bank).getToken());
                 oldTokenCache.put(bank, newTokenCache);
             } 
-            
-        }else { //assume consistent
-            List<Transaction> transactionsOfThisAsset = new ArrayList<Transaction>();
-            transactionsOfThisAsset.add(transaction);
+        }else {
             Map<Bank, ECPoint> newCache = new HashMap<Bank, ECPoint>();
             Map<Bank, ECPoint> newTokenCache = new HashMap<Bank, ECPoint>();
             for (Bank bank: this.participants) {
                 newCache.put(bank, transaction.getEntry(bank).getCM());
                 newTokenCache.put(bank, transaction.getEntry(bank).getToken());
             }
-            transactionsByAsset.put(asset, transactionsOfThisAsset);
+            
             cmCache.put(asset, newCache);
             tokenCache.put(asset, newTokenCache);
-
-
-            
         }
+        
         
         System.out.println("transfer completed");
         
@@ -153,4 +161,30 @@ public class Ledger{
 //        }
         return tokenCache.getOrDefault(asset, new HashMap<Bank, ECPoint>()).getOrDefault(bank, SECP256K1.CURVE.getInfinity());
     }
+    
+    public void deposit(Asset asset, Bank bank, BigInteger amount) { //not yet able to verify bank has sufficient amount when amount = negative
+        BigInteger r = SECP256K1.getRandomBigInt();
+        ECPoint cm = Ledger.PEDERSON.apply(new BigInteger[] {amount, r});
+        ECPoint token = bank.getPublicKey().multiply(r);
+        
+        if (cmCache.containsKey(asset)) {
+            Map<Bank, ECPoint> oldCache = cmCache.get(asset);
+            Map<Bank, ECPoint> oldTokenCache = tokenCache.get(asset);
+                ECPoint newValCache = oldCache.getOrDefault(bank, SECP256K1.CURVE.getInfinity()).add(cm);
+                oldCache.put(bank, newValCache);
+                
+                ECPoint newTokenCache = oldTokenCache.getOrDefault(bank, SECP256K1.CURVE.getInfinity()).add(token);
+                oldTokenCache.put(bank, newTokenCache);
+            } else {
+                Map<Bank, ECPoint> newCache = new HashMap<Bank, ECPoint>();
+                Map<Bank, ECPoint> newTokenCache = new HashMap<Bank, ECPoint>();
+
+                    newCache.put(bank, cm);
+                    newTokenCache.put(bank, token);
+            
+            cmCache.put(asset, newCache);
+            tokenCache.put(asset, newTokenCache);
+        }
+    }
+    
 }

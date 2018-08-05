@@ -38,18 +38,32 @@ public class Main {
         
        Ledger zkLedger = new Ledger(participants);
        
-       zkLedger.transfer(Asset.CNY, boa, chase, new BigInteger("2000"), new BigInteger("-2000"), boaSk);
+       zkLedger.deposit(Asset.CNY, boa, new BigInteger("1000"));
+       
+       zkLedger.transfer(Asset.CNY, boa, chase, new BigInteger("10000"), new BigInteger("0"), boaSk);
        System.out.println("transfer completed");
               
-       zkLedger.transfer(Asset.CNY, chase, citi, new BigInteger("100"), new BigInteger("1900"), chaseSk);
+       zkLedger.transfer(Asset.CNY, boa, chase, new BigInteger("1000"), new BigInteger("0"), boaSk);
+       System.out.println("transfer completed");
+       
+       zkLedger.transfer(Asset.CNY, chase, citi, new BigInteger("100"), new BigInteger("900"), chaseSk);
        System.out.println("transfer2 completed");
        
        zkLedger.transfer(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("50"), citiSk);
-       System.out.println("transfer2 completed");
+       System.out.println("transfer3 completed");
        
-//       System.out.println(boa);
-//       System.out.println(citi);
-//       System.out.println(chase);
+       zkLedger.deposit(Asset.CNY, citi, new BigInteger("250"));
+       
+       zkLedger.transfer(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("250"), citiSk);
+       System.out.println("transfer4 completed");
+       
+       
+       System.out.println(boa);
+       System.out.println(chase);
+       System.out.println(citi);
+        
+        
+        
        
     }
         

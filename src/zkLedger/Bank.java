@@ -14,7 +14,6 @@ public class Bank {
         
         
         public Bank(BigInteger secretKey) {
-            //this.secretKey = SECP256K1.getRandomBigInt();
             this.publicKey = Ledger.GENERATOR_H.multiply(secretKey);
         }
         

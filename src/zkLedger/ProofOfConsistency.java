@@ -37,11 +37,10 @@ public class ProofOfConsistency {
 //    }
     
     /**
-     * @param homomorphism1 a function that maps from the domain containing the secret message showing cm and token are consistent to the commitment space
-     * @param imageOfSecret1 the value that the secret gets mapped to by the homomorphism1
-     * @param homomorphism2 a function that maps from the domain containing the secret message showing that cm' and token' are consistent to the commitment space
-     * @param imageOfSecret2 the value that the secret gets mapped to by the homomorphism2
-     * @return true if and only if both consistenCommit and consistentAuxiliaryCommit are true
+     * 
+     * @param commitPair
+     * @param recommitPair
+     * @return
      */
     public boolean verifyProof(ECPoint[] commitPair, ECPoint[] recommitPair) {
         boolean cm = consistentCommit.verifyProof(homomorphism, commitPair, ADDITIONAL_INPUT);
