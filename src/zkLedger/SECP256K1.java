@@ -12,6 +12,10 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * An immutable class providing helper functions and constants for Secp256k1
+ *
+ */
 public class SECP256K1 {
     public static final ECCurve CURVE = ECNamedCurveTable.getParameterSpec("secp256k1").getCurve();
     public static MessageDigest SHA256;
@@ -27,7 +31,7 @@ public class SECP256K1 {
    
     
     /**
-     * @param encoding a encoding of a decompressed point on elliptic curve Secp256k1 in small-endian byte order
+     * @param encoding a byte array encoding of a decompressed point on elliptic curve Secp256k1 in small-endian order
      * @return the encoded point on elliptic curve Secp256k1 
      * credit to: http://javadox.com/org.bouncycastle/bcprov-jdk15on/1.51/org/bouncycastle/math/ec/ECCurve.java.html
      *            function:  protected ECPoint decompressPoint(int yTilde, BigInteger X1)
@@ -62,8 +66,7 @@ public class SECP256K1 {
     }
     
     /**
-     * Random big integer in (0, P);
-     * @return
+     * @return a random big integer in (0, P);
      */
     public static BigInteger getRandomBigInt() {
         BigInteger r;
@@ -74,6 +77,10 @@ public class SECP256K1 {
         return r;
     }
     
+    /**
+     * @param s the string encoding a elliptic curve
+     * @return a point of Elliptic curve Secp256k1 after applying point decompression to the input string under SHA256
+     */
     public static ECPoint makeGeneratorFromString(String s) {
         synchronized(CURVE) {
            return  pointDecompressFromString(
@@ -81,7 +88,10 @@ public class SECP256K1 {
         }
     }
     
-    
+    /**
+     * @param ecPointArray an array of EC points
+     * @return a big integer representing the result of applying SHA256 to the input array
+     */
     public static BigInteger ecPointArrayToRandomness(ECPoint[] ecPointArray) {
         
             final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();

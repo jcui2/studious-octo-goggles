@@ -9,11 +9,27 @@ import org.bouncycastle.math.ec.ECPoint;
 
 import zkLedger.OrProof.OrProofIndex;
 
-
+/**
+ * An immutable class representing a proof of asset
+ */
 public class ProofOfAsset{
     private final OrProof proofOfRecommit;
     private final RangeProof rangeProof;
     
+    /**
+     * Construct a proof of asset 
+     * @param ledger the ledger for which the proof of asset is generated
+     * @param asset the Asset in which this is proving the amount
+     * @param bank the Bank that this is proving the commitment amount
+     * @param secretMessage an array of BigIntegers representing either [secret key] or [amount receive, r, r']
+     * @param cm commitment associated with this 
+     * @param token token associated with this 
+     * @param cmPrime recommitment associated with this
+     * @param tokenPrime token for recommitment associated with this 
+     * @param recommitValue the value cm' is committing to
+     * @param rPrime the randomness used in cm'
+     * @param knownRecommitType an index indicating whether cm' is a recommit to total asset or a recommit to the amount received
+     */
     public ProofOfAsset(Ledger ledger, Asset asset, Bank bank, 
                         BigInteger[] secretMessage, 
                         ECPoint cm, ECPoint token, ECPoint cmPrime, ECPoint tokenPrime, BigInteger recommitValue, BigInteger rPrime,
@@ -32,6 +48,18 @@ public class ProofOfAsset{
         
     }
     
+    /**
+     * Verify that a proof of asset is correct 
+     * @param ledger the ledger with respect to which the proof is verified 
+     * @param asset the Asset for which this is proving the amount 
+     * @param bank the Bank that this is proving the commitment amount
+     * @param cm commitment expected to be associated with this 
+     * @param token token expected to be associated with this 
+     * @param cmPrime recommit expected to be associated with this 
+     * @param tokenPrime token for recommitment expected to be associated with this 
+     * @return true if and only if cm' is either a recommit of cm or a recommit of the total asset held by the band after current transaction,
+     *              and cm' is a commitment to a value in range [0, 2^40]
+     */
     public boolean verifyProof(Ledger ledger, Asset asset, Bank bank,ECPoint cm, ECPoint token, ECPoint cmPrime, ECPoint tokenPrime) {
         ECPoint cmSumOverCmPrime =ledger.getCachedCM(asset, bank).add(cm).add(cmPrime.negate());
         ECPoint tokenSumOverTokenPrime = ledger.getCachedToken(asset, bank).add(token).add(tokenPrime.negate());

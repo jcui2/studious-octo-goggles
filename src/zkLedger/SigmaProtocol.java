@@ -7,18 +7,20 @@ import java.util.stream.Stream;
 
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * an immutable object representing a non-interactive zero-knowledge proof
+ */
 public class SigmaProtocol {
     private final ECPoint[] firstMessage; //first message of a Sigma protocol
     private final BigInteger[] secondMessage; //second message of a Sigma protocol
     private final BigInteger randomness; 
     
-    
     /**
-     * A constructor that creates a sigma protocol
+     * Construct a non-interactive proof that uses sigma protocol and SHA 256 as crypto hash function
      * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
-     * @param cryptoHash a function that can be used to generate random challenge
      * @param secretMessage the secret message to be conveyed
-     * @return a zero-knowledge proof in the format of a sigma protocol
+     * @param firstMessagePreimage the pre-image for first message 
+     * @param additionalInput additional input to the crypto hash function 
      */
     public SigmaProtocol(Function<BigInteger[], ECPoint[]> homomorphism, 
                          BigInteger[] secretMessage,
@@ -27,10 +29,6 @@ public class SigmaProtocol {
         this(homomorphism, 
                 inputToRandomness(homomorphism.apply(firstMessagePreimage), homomorphism.apply(secretMessage), additionalInput), 
                 secretMessage, firstMessagePreimage);
-        
-        
-        
-        
     }
     
     private static BigInteger inputToRandomness(ECPoint[] firstMessage, ECPoint[] secretImage, ECPoint[] additionalInput) {
@@ -38,18 +36,15 @@ public class SigmaProtocol {
                                               Arrays.stream(additionalInput))
                                               .toArray(ECPoint[]::new);
         return SECP256K1.ecPointArrayToRandomness(concatArray);
-        
-        
     }
         
     
-    
     /**
-     * A constructor of a sigma protocol that simulates a zkp given a expected result
+     * Construct a non-interactive proof that uses sigma protocol and a given randomness 
      * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
      * @param randomness a randomly chosen challenge from the challenge space
-     * @param secondMessage a randomly chosen secret message from the domain containing the secret message
-     * @param imageOfSecret the value that the secret gets mapped to by the homomorphism
+     * @param secretMessage the secret message to be conveyed
+     * @param firstMessagePreimage the pre-image for first message 
      */
     public SigmaProtocol(Function<BigInteger[], ECPoint[]> homomorphism, 
                          BigInteger randomness,
@@ -63,20 +58,22 @@ public class SigmaProtocol {
         }
     }
     
-    public SigmaProtocol(ECPoint[] firstMessage, BigInteger randomness, BigInteger[] secondMessage) {//defensive copying
+    //used to simulate a sigma protocol
+    private SigmaProtocol(ECPoint[] firstMessage, BigInteger randomness, BigInteger[] secondMessage) {//defensive copying
         this.firstMessage = Arrays.copyOf(firstMessage, firstMessage.length);
         this.randomness = randomness;
         this.secondMessage = Arrays.copyOf(secondMessage, secondMessage.length);
     }
     
     
-    
+   
     /**
-     * Simulate a sigma protocol with randomly selected second message from domain and randomness
-     * @param homomorphism
-     * @param randomness
-     * @param randomSecondMessage
-     * @return
+     * Simulate a sigma protocol with randomly selected second message and randomness
+     * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
+     * @param secretImage the expected image of the secret message
+     * @param randomness a randomly chosen challenge from the challenge space
+     * @param randomSecondMessage the second message to be used in the sigma protocol 
+     * @return a simulated simga protocol for which the verifier can prove that the prover knows the preimage of secretImage
      */
     public static SigmaProtocol simulateProtocol(Function<BigInteger[], ECPoint[]> homomorphism, 
                                                  ECPoint[] secretImage,
@@ -92,12 +89,14 @@ public class SigmaProtocol {
         
     }
 
-    
+   
     /**
      * Verify that a zero-knowledge proof in the form of Sigma Protocol is correct
      * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
-     * @param imageOfSecret the value that the secret gets mapped to by the homomorphism
-     * @return true if and only if the proof is true
+     * @param secretImage the expected image of the secret message
+     * @param additionalInput additional input to crypto hash function SHA256
+     * @return true if and only if the second message under homomorphism is the same as first message plus secret Image times to the randomness,
+     *          where plus is the group operation in the codomain
      */
     public boolean verifyProof(Function<BigInteger[], ECPoint[]> homomorphism, 
                                ECPoint[] secretImage,
@@ -108,7 +107,12 @@ public class SigmaProtocol {
     
     
     /**
-     * Verify using user inputed randomness
+     * Verify that a zero-knowledge proof in the form of Sigma Protocol is correct
+     * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
+     * @param inputedRandomness the randomness expected to be used in the proof
+     * @param secretImage the expected image of the secret message
+     * @return true if and only if the second message under homomorphism is the same as first message plus secret Image times to the randomness,
+     *          where plus is the group operation in the codomain
      */
     public boolean verifyProof(Function<BigInteger[], ECPoint[]> homomorphism, 
                                BigInteger inputedRandomness,
@@ -138,7 +142,9 @@ public class SigmaProtocol {
         return this.randomness;
     }
     
-    
+    /**
+     * @return the first message associated with this 
+     */
     public ECPoint[] getFirstMessage() {
         return this.firstMessage;
     }

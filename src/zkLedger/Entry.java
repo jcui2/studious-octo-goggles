@@ -6,16 +6,32 @@ import org.bouncycastle.math.ec.ECPoint;
 
 import zkLedger.OrProof.OrProofIndex;
 
+/**
+ * immutable class representing one entry in a transaction 
+ */
 public class Entry {
-    private Bank bank;
-    private ECPoint cm;
-    private ECPoint token;
-    private ECPoint cmPrime;
-    private ECPoint tokenPrime;
-    private ProofOfAsset poa;
-    private ProofOfConsistency poc;
-    private Asset asset;
+    private final Bank bank;
+    private final ECPoint cm;
+    private final ECPoint token;
+    private final ECPoint cmPrime;
+    private final ECPoint tokenPrime;
+    private final ProofOfAsset poa;
+    private final ProofOfConsistency poc;
+    private final Asset asset;
     
+    /**
+     * construct an Entry object representing the entry for one bank in one transaction
+     * @param ledger the ledger for which the transaction takes place
+     * @param asset the Asset in which the transaction takes place 
+     * @param bank the Bank corresponding to this entry
+     * @param amountReceived the amount received by this bank in this transaction, can be either positive, negative or zeros
+     * @param r the randomness to be used to generate a commit
+     * @param recommitValue the value to recommit to, must be nonnegative
+     * @param rPrime the randomness to be used to generate a recommit
+     * @param poaSecretMessage the secret message for proof of asset
+     * @param knownRecommitType the type of recommit, 
+     *        OrProofIndex.FIRST represents recommiting to the total asset, OrProofIndex.SECOND represents recommiting to the amount received in transaction
+     */
     public Entry(Ledger ledger, Asset asset, Bank bank, BigInteger amountReceived, BigInteger r, BigInteger recommitValue, BigInteger rPrime,
                   BigInteger[] poaSecretMessage, OrProofIndex knownRecommitType) {
         this.asset = asset;
@@ -35,21 +51,27 @@ public class Entry {
     
     
     /**
-     * @return true if and only if poa and poc are both true
+     * @param ledger the ledger with respect to which this entry needs to be verified
+     * @return true if and only both proof of consistency and proof of asset holds for this entry
      */
     public boolean verify(Ledger ledger) {
-        boolean pocResult  = poc.verifyProof(new ECPoint[] {cm, token}, new ECPoint[] {cmPrime, tokenPrime}) ;        
+        boolean pocResult  = poc.verifyProof(new ECPoint[] {cm, token}, new ECPoint[] {cmPrime, tokenPrime}, bank.getPublicKey()) ;        
         boolean poaResult = poa.verifyProof(ledger, asset, bank, cm, token, cmPrime, tokenPrime);        
         return pocResult && poaResult;
-                 
-                                   //note this method currently can only be used to prove when this transactions is being created (i.e. cache not updated yet)
+        //note this method can only be used to verify a entry when the transactions is just created (i.e. caches in the ledger not updated yet)
                 
     }
     
+    /**
+     * @return the commitment in the entry
+     */
     public ECPoint getCM() {
         return this.cm;
     }
     
+    /**
+     * @return the token in this entry
+     */
     public ECPoint getToken() {
         return this.token;
     }

@@ -12,7 +12,7 @@ public class Main {
     public static void main(String[] args) {
        List<Bank> participants = new ArrayList<>();
 
-       //DRY!!
+       //NOT DRY :/
         BigInteger boaSk = SECP256K1.getRandomBigInt();
         Bank boa = new Bank(boaSk);
        participants.add(boa);
@@ -43,7 +43,7 @@ public class Main {
        
        
        Transaction transferOne = zkLedger.makeTransaction(Asset.CNY, boa, chase, new BigInteger("10000"), new BigInteger("0"), boaSk);
-       zkLedger.addTransaction(Asset.CNY, transferOne);
+       zkLedger.addTransaction(transferOne);
        
        
        SigmaProtocol auditingProof = zkLedger.makeAuditingProof(Asset.CNY, boa, boaSk, new BigInteger("1000"));
@@ -51,20 +51,19 @@ public class Main {
        
               
        Transaction transferTwo =zkLedger.makeTransaction(Asset.CNY, boa, chase, new BigInteger("1000"), new BigInteger("0"), boaSk);
-       zkLedger.addTransaction(Asset.CNY, transferTwo);
+       zkLedger.addTransaction(transferTwo);
        
        Transaction transferThree = zkLedger.makeTransaction(Asset.CNY, chase, citi, new BigInteger("100"), new BigInteger("900"), chaseSk);
-       zkLedger.addTransaction(Asset.CNY, transferThree);
+       zkLedger.addTransaction(transferThree);
        
        Transaction transferFour = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("50"), citiSk);
-       zkLedger.addTransaction(Asset.CNY, transferFour);
+       zkLedger.addTransaction(transferFour);
        
        DepositEntry depositTwo = zkLedger.makeDepositEntry(Asset.CNY, citi, new BigInteger("250"), new BigInteger("300"), citiSk);
        zkLedger.addDeposit(depositTwo);
-//       zkLedger.deposit(Asset.CNY, citi, new BigInteger("250"));
        
        Transaction transferFive = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("250"), citiSk);
-       zkLedger.addTransaction(Asset.CNY, transferFive);
+       zkLedger.addTransaction(transferFive);
        
     }
         

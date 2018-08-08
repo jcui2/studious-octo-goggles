@@ -106,8 +106,8 @@ public class Transaction {
     }
     
     
-    //verify that the sum of randomness is zero
     /**
+     * @param ledger the ledger with respect to which this transaction needs to be verified
      * @return true if and only if all entries are consistent, have enough asset, and the entire transaction 
      *         have overall balance 0.
      */
@@ -163,10 +163,17 @@ public class Transaction {
         return true;
     }
     
+    /**
+     * @return Asset associated with this transaction 
+     */
     public Asset getAsset() {
         return this.asset;
     }
     
+    /**
+     * @param bank bank for which the entry is of interest
+     * @return Entry associated with Bank bank
+     */
     public Entry getEntry(Bank bank) {
         return record.get(bank);
     }

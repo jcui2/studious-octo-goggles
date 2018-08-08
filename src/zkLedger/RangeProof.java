@@ -9,12 +9,19 @@ import org.bouncycastle.math.ec.ECPoint;
 
 import zkLedger.OrProof.OrProofIndex;
 
+/**
+ * An immutable object representing a range proof proving that a value under Pedersen commiment scheme is in range [0, 2^40]
+ */
 public class RangeProof {
     private OrProof[] orProofByBit;
     private ECPoint[] cmByBit;
     public static final Function<BigInteger[], ECPoint[]> EXPO = (input) -> new ECPoint[] {Ledger.GENERATOR_H.multiply(input[1])};
     
-    
+    /**
+     * Construct a range proof 
+     * @param recommitVal the value to be proved 
+     * @param randomnessPrime the randomness used Pedersen commitment
+     */
     public RangeProof(BigInteger recommitVal, BigInteger randomnessPrime) {
         this.orProofByBit = new OrProof[40];
         this.cmByBit = new ECPoint[40];
@@ -85,7 +92,10 @@ public class RangeProof {
         }
     }
     
-    
+    /**
+     * @param cmPrime the expected commitment of the value to be proved in range 
+     * @return true if and only if bitwise recommit of the value sums up to cmPrime and each bitwise recommit is either a recommit to 0 or to 2^i
+     */
     public boolean VerifyProof(ECPoint cmPrime) {
         ECPoint cmByBitSum = SECP256K1.CURVE.getInfinity();
         for (int i = 0; i < 40 ; i++) {
