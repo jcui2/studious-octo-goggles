@@ -37,10 +37,7 @@ public class RangeProof {
             int index = i;
             
             Thread thread = new Thread(new Runnable() {
-                public void run() {
-//                    Function<BigInteger[], ECPoint[]> expo_div = (input) 
-//                            -> new ECPoint[] {Ledger.PEDERSON.apply(input).subtract(Ledger.GENERATOR_G.multiply(new BigInteger("2").pow(39-index)))};
-                    
+                public void run() {        
                     OrProof currentBit;
                     ECPoint cm;
                     
@@ -61,10 +58,6 @@ public class RangeProof {
                                 new ECPoint[] {Ledger.GENERATOR_G, Ledger.GENERATOR_H}, new ECPoint[] {Ledger.GENERATOR_G, Ledger.GENERATOR_H},
                                 2, 8);
                     }
-//                    recommitValInBit.charAt(index-40+recommitValInBit.length()) == '1'
-//                    else {
-//                        throw new RuntimeException("recommit value not positive");
-//                    }
                     
                     synchronized(orProofByBit) {
                         orProofByBit[index] = currentBit;
@@ -110,8 +103,6 @@ public class RangeProof {
         
         for (int i = 0; i < 40; i++) {
             int index = i;
-//            Function<BigInteger[], ECPoint[]> expo_div = (input) 
-//                    -> new ECPoint[] {Ledger.PEDERSON.apply(input).subtract(Ledger.GENERATOR_G.multiply(new BigInteger("2").pow(39-index)))};
             
             Thread thread = new Thread(new Runnable(){
                     public void run() {

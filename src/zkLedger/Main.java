@@ -38,32 +38,33 @@ public class Main {
         
        Ledger zkLedger = new Ledger(participants);
        
-       zkLedger.deposit(Asset.CNY, boa, new BigInteger("1000"));
+       DepositEntry depositOne = zkLedger.makeDepositEntry(Asset.CNY, boa, new BigInteger("1000"), new BigInteger("1000"), boaSk);
+       zkLedger.addDeposit(depositOne);
        
-       zkLedger.transfer(Asset.CNY, boa, chase, new BigInteger("10000"), new BigInteger("0"), boaSk);
-       System.out.println("transfer completed");
+       
+       Transaction transferOne = zkLedger.makeTransaction(Asset.CNY, boa, chase, new BigInteger("10000"), new BigInteger("0"), boaSk);
+       zkLedger.addTransaction(Asset.CNY, transferOne);
+       
+       
+       SigmaProtocol auditingProof = zkLedger.makeAuditingProof(Asset.CNY, boa, boaSk, new BigInteger("1000"));
+       System.out.println(zkLedger.verifyAuditing(Asset.CNY, boa, new BigInteger ("1000"), auditingProof));
+       
               
-       zkLedger.transfer(Asset.CNY, boa, chase, new BigInteger("1000"), new BigInteger("0"), boaSk);
-       System.out.println("transfer completed");
+       Transaction transferTwo =zkLedger.makeTransaction(Asset.CNY, boa, chase, new BigInteger("1000"), new BigInteger("0"), boaSk);
+       zkLedger.addTransaction(Asset.CNY, transferTwo);
        
-       zkLedger.transfer(Asset.CNY, chase, citi, new BigInteger("100"), new BigInteger("900"), chaseSk);
-       System.out.println("transfer2 completed");
+       Transaction transferThree = zkLedger.makeTransaction(Asset.CNY, chase, citi, new BigInteger("100"), new BigInteger("900"), chaseSk);
+       zkLedger.addTransaction(Asset.CNY, transferThree);
        
-       zkLedger.transfer(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("50"), citiSk);
-       System.out.println("transfer3 completed");
+       Transaction transferFour = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("50"), citiSk);
+       zkLedger.addTransaction(Asset.CNY, transferFour);
        
-       zkLedger.deposit(Asset.CNY, citi, new BigInteger("250"));
+       DepositEntry depositTwo = zkLedger.makeDepositEntry(Asset.CNY, citi, new BigInteger("250"), new BigInteger("300"), citiSk);
+       zkLedger.addDeposit(depositTwo);
+//       zkLedger.deposit(Asset.CNY, citi, new BigInteger("250"));
        
-       zkLedger.transfer(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("250"), citiSk);
-       System.out.println("transfer4 completed");
-       
-       
-       System.out.println(boa);
-       System.out.println(chase);
-       System.out.println(citi);
-        
-        
-        
+       Transaction transferFive = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("250"), citiSk);
+       zkLedger.addTransaction(Asset.CNY, transferFive);
        
     }
         

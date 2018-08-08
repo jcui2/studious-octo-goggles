@@ -14,88 +14,72 @@ import org.bouncycastle.math.ec.ECPoint;
 
 public class Ledger{
    //generators used in the zkLedger
-   public static final ECPoint GENERATOR_G = SECP256K1.pointDecompressFromString(
-                                             SECP256K1.SHA256.digest("0".getBytes(StandardCharsets.UTF_8)));
-   public static final ECPoint GENERATOR_H = SECP256K1.pointDecompressFromString(
-                                             SECP256K1.SHA256.digest("1".getBytes(StandardCharsets.UTF_8)));
+   public static final ECPoint GENERATOR_G = SECP256K1.makeGeneratorFromString("0");
+   public static final ECPoint GENERATOR_H = SECP256K1.makeGeneratorFromString("1");
    
    public static final Function<BigInteger[], ECPoint> PEDERSON = (input) 
                                                                      -> (GENERATOR_G.multiply(input[0])).add(GENERATOR_H.multiply(input[1]));
     
     private final List<Bank> participants; //list of banks currently participating in transactions
-    private final List<Transaction> transactions; //list of transaction record ordered by time --> synchronized!!!
+    private final List<Transaction> transactions; //list of transaction record ordered by time
     private final Map<Asset, List<Transaction>> transactionsByAsset; //a map from type of asset to transactions of that asset
-    private final Map<Asset, Map<Bank, ECPoint>> cmCache;
+    private final List<DepositEntry> deposits; //list of deposits record ordered by time
+    private final Map<Asset, List<DepositEntry>> depositsByAsset;//a map from type of asset to deposits of that asset
+    private final Map<Asset, Map<Bank, ECPoint>> cmCache; 
     private final Map<Asset, Map<Bank, ECPoint>> tokenCache;
     private final Clock clock;
     
     
     /**
-     * Construct a new ledgers with participants currently involved in transactions, transctions initiated 
-     * to be an empty list and transactionsByAsset an empty map.
+     * Construct a new ledger with banks participants currently involved in transactions
      * @param participants banks currently participating in transactions
      */
     public Ledger(List<Bank> participants) {
         this.participants = participants;
         this.transactions = new ArrayList<Transaction>();
         this.transactionsByAsset = new HashMap<Asset, List<Transaction>>();
+        this.deposits = new ArrayList<DepositEntry>();
+        this.depositsByAsset =  new HashMap<Asset, List<DepositEntry>>();
         this.clock = Clock.systemDefaultZone();
         this.cmCache = new HashMap<Asset, Map<Bank, ECPoint>>();
         this.tokenCache = new HashMap<Asset, Map<Bank, ECPoint>>();
     }
     
     /**
-     * Create and verify a transaction 
-     * @param asset the asset of transaction
-     * @param time time of transaction
-     * @param senderBank bank that sends money
-     * @param receiverBank bank that receives money
-     * @param amount the amount of money in this transaction positive
+     * 
+     * @param asset
+     * @param senderBank
+     * @param receiverBank
+     * @param amount
+     * @param senderTotalAsset
+     * @param secretKey
+     * @return
      */
-    public synchronized void transfer(Asset asset, Bank senderBank, Bank receiverBank, BigInteger amount, BigInteger senderTotalAsset, BigInteger secretKey) {
+    public synchronized Transaction makeTransaction(Asset asset, Bank senderBank, Bank receiverBank, BigInteger amount,
+                                                    BigInteger senderTotalAsset, BigInteger secretKey) {
         LocalDateTime time = LocalDateTime.now(clock);
         Transaction transaction = new Transaction(this, asset, time, senderBank, receiverBank, 
                                                   amount, senderTotalAsset,
                                                   new ArrayList<Bank>(this.participants), secretKey);
-        //verify this transaction
-        // multithreaded?
-        
-//        List<Thread> listOfThread = new ArrayList<>();
-//        List<Boolean> allResult = new ArrayList<>();
-//        for (Bank bank: participants) {
-//            Thread thread = new Thread(new Runnable() {
-//                public void run() {
-//                    boolean result = transaction.verify();
-//                    synchronized(allResult) {
-//                        allResult.add(result);
-//                    }
-//                }
-//            });
-//            
-//            listOfThread.add(thread);
-//        }
-//        
-//        for(Thread thread: listOfThread) {
-//            thread.start();
-//        }
-//        
-//        for(Thread thread: listOfThread) {
-//            try {
-//            thread.join();
-//            } catch(Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        
-//        for (boolean result: allResult) {
-//            if (result == false) {
-//                System.out.println("Proof Error");
-//                return;
-//            }
-//        }
-        
+        return transaction;
+    }
+    
+//    /**
+//     * Create and verify a transaction 
+//     * @param asset the asset of transaction
+//     * @param time time of transaction
+//     * @param senderBank bank that sends money
+//     * @param receiverBank bank that receives money
+//     * @param amount the amount of money in this transaction positive
+//     */
+    /**
+     * 
+     * @param asset
+     * @param transaction
+     */
+    public synchronized void addTransaction(Asset asset, Transaction transaction) {
          if (!transaction.verify(this)) {
-             System.out.println("Proof Error");
+             System.out.println("Proof Error, transacation ignored");
              return;
          }
         
@@ -136,55 +120,92 @@ public class Ledger{
         
         
         System.out.println("transfer completed");
-        
 
     }  
    
-    //Listener gets called everything a new transfer happened?
-    
-//    public List<Bank> getBanks(){
-//        return new ArrayList<Bank>(this.participants);
-//    }
-//    
+
     public ECPoint getCachedCM(Asset asset, Bank bank) {
         return cmCache.getOrDefault(asset, new HashMap<Bank, ECPoint>()).getOrDefault(bank, SECP256K1.CURVE.getInfinity());
     }
     
     public ECPoint getCachedToken(Asset asset, Bank bank) {
-//        if (!tokenCache.containsKey(asset) ||! tokenCache.get(asset).containsKey(bank)) {
-//            System.out.println("asset not in here");
-//            return SECP256K1.CURVE.getInfinity();
-//            
-//        }
-//        else {
-//            return tokenCache.get(asset).get(bank);
-//        }
         return tokenCache.getOrDefault(asset, new HashMap<Bank, ECPoint>()).getOrDefault(bank, SECP256K1.CURVE.getInfinity());
     }
     
-    public void deposit(Asset asset, Bank bank, BigInteger amount) { //not yet able to verify bank has sufficient amount when amount = negative
-        BigInteger r = SECP256K1.getRandomBigInt();
-        ECPoint cm = Ledger.PEDERSON.apply(new BigInteger[] {amount, r});
-        ECPoint token = bank.getPublicKey().multiply(r);
+    
+    public synchronized DepositEntry makeDepositEntry(Asset asset, Bank bank, BigInteger amount, BigInteger receiverTotalAsset, BigInteger secretKey) {
+        LocalDateTime time = LocalDateTime.now(clock);
+        return new DepositEntry(this, asset, time, bank, amount, receiverTotalAsset, secretKey);
+    }
+    
+    
+    public synchronized void addDeposit(DepositEntry depositEntry) {
+        Asset asset = depositEntry.getAsset();
+        Bank bank = depositEntry.getBank();
+        ECPoint cm = depositEntry.getCM();
+        ECPoint token = depositEntry.getToken();
         
-        if (cmCache.containsKey(asset)) {
-            Map<Bank, ECPoint> oldCache = cmCache.get(asset);
-            Map<Bank, ECPoint> oldTokenCache = tokenCache.get(asset);
+        if (depositEntry.verifyProof(this)) {
+            if (cmCache.containsKey(asset)) {
+                Map<Bank, ECPoint> oldCache = cmCache.get(asset);
+                Map<Bank, ECPoint> oldTokenCache = tokenCache.get(asset);
                 ECPoint newValCache = oldCache.getOrDefault(bank, SECP256K1.CURVE.getInfinity()).add(cm);
                 oldCache.put(bank, newValCache);
-                
+
                 ECPoint newTokenCache = oldTokenCache.getOrDefault(bank, SECP256K1.CURVE.getInfinity()).add(token);
                 oldTokenCache.put(bank, newTokenCache);
             } else {
                 Map<Bank, ECPoint> newCache = new HashMap<Bank, ECPoint>();
                 Map<Bank, ECPoint> newTokenCache = new HashMap<Bank, ECPoint>();
 
-                    newCache.put(bank, cm);
-                    newTokenCache.put(bank, token);
+                newCache.put(bank, cm);
+                newTokenCache.put(bank, token);
+
+                cmCache.put(asset, newCache);
+                tokenCache.put(asset, newTokenCache);
+
+                System.out.println("deposit completed");
+
+            }
             
-            cmCache.put(asset, newCache);
-            tokenCache.put(asset, newTokenCache);
+            deposits.add(depositEntry);
+            if (depositsByAsset.containsKey(asset)) { 
+                depositsByAsset.get(asset).add(depositEntry);
+           
+            }else { 
+                List<DepositEntry> depositsOfThisAsset = new ArrayList<DepositEntry>();
+                depositsOfThisAsset.add(depositEntry);
+                depositsByAsset.put(asset, depositsOfThisAsset);
+
+            }
+            
+        }
+        
+        else {
+            System.out.println("Proof Error, Deposit Ignored");
+            
         }
     }
+    
+    
+    public SigmaProtocol makeAuditingProof(Asset asset, Bank bank, BigInteger secretKey, BigInteger totalAsset) {
+        ECPoint sPrime = this.getCachedCM(asset, bank).subtract(GENERATOR_G.multiply(totalAsset));
+        ECPoint t = this.getCachedToken(asset, bank);
+        Function<BigInteger[], ECPoint[]> multiPower = (input) -> new ECPoint[] {sPrime.multiply(input[0]), GENERATOR_H.multiply(input[0])};
+        return new SigmaProtocol(multiPower, new BigInteger[] {secretKey}, 
+                                new BigInteger[] {SECP256K1.getRandomBigInt()}, new ECPoint[] {sPrime, GENERATOR_H});
+    }
+    
+    public boolean verifyAuditing(Asset asset, Bank bank, BigInteger totalAsset, SigmaProtocol auditingProof) {
+        ECPoint sPrime = this.getCachedCM(asset, bank).subtract(GENERATOR_G.multiply(totalAsset));
+        ECPoint t = this.getCachedToken(asset, bank);
+        Function<BigInteger[], ECPoint[]> multiPower = (input) -> new ECPoint[] {sPrime.multiply(input[0]), GENERATOR_H.multiply(input[0])};
+        return auditingProof.verifyProof(multiPower, new ECPoint[] {t, bank.getPublicKey()},new ECPoint[] {sPrime, GENERATOR_H});
+        
+    }
+    
+    
+    
+    
     
 }

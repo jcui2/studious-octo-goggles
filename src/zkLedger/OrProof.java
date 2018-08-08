@@ -8,8 +8,6 @@ import org.bouncycastle.math.ec.ECPoint;
 public class OrProof {
     private SigmaProtocol firstProof;
     private SigmaProtocol secondProof; 
-//    private Function<BigInteger[], ECPoint[]> firstHomomorphism;
-//    private Function<BigInteger[], ECPoint[]> secondHomomorphism;
     
     
     public enum OrProofIndex{
@@ -23,9 +21,6 @@ public class OrProof {
                    ECPoint[] firstAdditionalInfo, ECPoint[] secondAdditionalInfo,
                    int simulatedProofPreimageLength,
                    int numberOfHashArguments) {
-        
-//        this.firstHomomorphism = firstHomomorphism;
-//        this.secondHomomorphism = secondHomomorphism;
         
         BigInteger[] randomSecondMessage = new BigInteger[simulatedProofPreimageLength];  //random second message for the unknown proof
         for (int i=0; i < simulatedProofPreimageLength; i++) {
@@ -73,9 +68,6 @@ public class OrProof {
             System.arraycopy(ecPointArray, 0, allInputFlattened, destination, ecPointArray.length);
             destination += ecPointArray.length;
         }
-    //  ECPoint[] flattened = (org.bouncycastle.math.ec.ECPoint[]) Arrays.stream(allInputs).flatMap(ecPointArray -> Arrays.stream(ecPointArray)).toArray();
-
-//        System.out.println(destination);
         return SECP256K1.ecPointArrayToRandomness(allInputFlattened);
     }
     

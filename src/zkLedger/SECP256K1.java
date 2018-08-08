@@ -2,6 +2,7 @@ package zkLedger;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
@@ -73,6 +74,13 @@ public class SECP256K1 {
         return r;
     }
     
+    public static ECPoint makeGeneratorFromString(String s) {
+        synchronized(CURVE) {
+           return  pointDecompressFromString(
+                    SECP256K1.SHA256.digest(s.getBytes(StandardCharsets.UTF_8)));
+        }
+    }
+    
     
     public static BigInteger ecPointArrayToRandomness(ECPoint[] ecPointArray) {
         
@@ -85,7 +93,7 @@ public class SECP256K1 {
                 e.printStackTrace();
             }
 
-       synchronized(SECP256K1.CURVE) {
+       synchronized(CURVE) {
             byte[] inputInByte = SECP256K1.SHA256.digest(byteArray.toByteArray());
             return new BigInteger(1, inputInByte);
         }

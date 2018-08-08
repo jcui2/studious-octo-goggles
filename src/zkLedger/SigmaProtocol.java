@@ -1,6 +1,5 @@
 package zkLedger;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -14,7 +13,6 @@ public class SigmaProtocol {
     private final BigInteger randomness; 
     
     
-    /*TODO: add parameter as needed so that first message can be randomly chosen from domain*/
     /**
      * A constructor that creates a sigma protocol
      * @param homomorphism a function that maps from the domain containing the secret message to the commitment space
@@ -36,25 +34,6 @@ public class SigmaProtocol {
     }
     
     private static BigInteger inputToRandomness(ECPoint[] firstMessage, ECPoint[] secretImage, ECPoint[] additionalInput) {
-//        final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-//        try {
-//            for (ECPoint[] ecPointArray: new ECPoint[][] {firstMessage, secretImage, additionalInput}) {
-//                for (ECPoint i: ecPointArray) {
-//                    byteArray.write(i.getEncoded(true));
-//                }
-//            }
-//        } catch(Exception e) {
-//            e.printStackTrace();
-//        }
-//        
-//        
-//        
-//        synchronized(SECP256K1.CURVE) {
-//            byte[] inputInByte = SECP256K1.SHA256.digest(byteArray.toByteArray());
-//            return new BigInteger(1, inputInByte);
-//        }
-       
-        
         ECPoint[] concatArray = Stream.concat(Stream.concat(Arrays.stream(firstMessage), Arrays.stream(secretImage)), 
                                               Arrays.stream(additionalInput))
                                               .toArray(ECPoint[]::new);
@@ -143,8 +122,6 @@ public class SigmaProtocol {
         
         for (int i = 0; i < expectedValue.length; i++) {
             if (!secondMessageImage[i].equals(expectedValue[i]) ){
-//                System.out.println(secondMessageImage[i]);
-//                System.out.println(expectedValue[i]);
                 return false;
             }
         }
