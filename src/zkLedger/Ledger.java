@@ -169,7 +169,7 @@ public class Ledger{
                 cmCache.put(asset, newCache);
                 tokenCache.put(asset, newTokenCache);
 
-                System.out.println("deposit completed");
+               
 
             }
             
@@ -183,7 +183,7 @@ public class Ledger{
                 depositsByAsset.put(asset, depositsOfThisAsset);
 
             }
-            
+            System.out.println("deposit completed");
         }
         
         else {
@@ -245,4 +245,25 @@ public class Ledger{
         return tokenCache.getOrDefault(asset, new HashMap<Bank, ECPoint>()).getOrDefault(bank, SECP256K1.CURVE.getInfinity());
     }
     
+    /**
+     * Add new participants
+     * @param banks Banks that will participate in later activities
+     */
+    public synchronized void addParticipant(List<Bank> banks) {
+        for (Bank bank: banks) {
+            this.participants.add(bank);
+        }
+    }
+    
+    /**
+     * remove participants that will no longer involve in the financial activities if they are currently involved in activites
+     * @param banks Banks to be removed
+     */
+    public synchronized void removeParticipant(List<Bank> banks) {
+        for (Bank bank: banks) {
+            if (this.participants.contains(bank)) {
+                this.participants.remove(bank);
+            }
+        }
+    }
 }

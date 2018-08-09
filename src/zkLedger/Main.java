@@ -2,6 +2,7 @@ package zkLedger;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,11 +60,21 @@ public class Main {
        Transaction transferFour = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("50"), citiSk);
        zkLedger.addTransaction(transferFour);
        
+       zkLedger.removeParticipant(Arrays.asList(new Bank[] {jpMorgan}));
+       
        DepositEntry depositTwo = zkLedger.makeDepositEntry(Asset.CNY, citi, new BigInteger("250"), new BigInteger("300"), citiSk);
        zkLedger.addDeposit(depositTwo);
        
-       Transaction transferFive = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("250"), citiSk);
+       Transaction transferFive = zkLedger.makeTransaction(Asset.CNY, citi, jpMorgan, new BigInteger("50"), new BigInteger("250"), citiSk);
        zkLedger.addTransaction(transferFive);
+       
+       zkLedger.addParticipant(Arrays.asList(new Bank[] {jpMorgan}));
+       
+       Transaction transferSix = zkLedger.makeTransaction(Asset.CNY, citi, jpMorgan, new BigInteger("50"), new BigInteger("250"), citiSk);
+       zkLedger.addTransaction(transferSix);
+       
+       Transaction transferSeven = zkLedger.makeTransaction(Asset.CNY, citi, boa, new BigInteger("50"), new BigInteger("200"), citiSk);
+       zkLedger.addTransaction(transferSeven);
        
     }
         
