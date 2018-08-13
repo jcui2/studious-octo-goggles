@@ -16,19 +16,19 @@ public class ProofOfConsistency {
     
     /**
      * Construct a ProofOfConsistency object 
-     * @param commit an array containing cm
-     * @param recommit an array containing cm'
+     * @param commitPair an array containing {v, r}
+     * @param recommitPair an array containing either {v, r'} or {sum of v, r'}
      * @param publicKey public key of the bank associated with cm and cm'
      */
-    public ProofOfConsistency(BigInteger[] commit, BigInteger[] recommit, ECPoint publicKey) {
+    public ProofOfConsistency(BigInteger[] commitPair, BigInteger[] recommitPair, ECPoint publicKey) {
         Function<BigInteger[], ECPoint[]> homomorphism = (inputTuple) -> new ECPoint[] {(Ledger.GENERATOR_G.multiply(inputTuple[0])).add(Ledger.GENERATOR_H.multiply(inputTuple[1])),
                 publicKey.multiply(inputTuple[1])};
         
-        this.consistentCommit = new SigmaProtocol(homomorphism, commit, 
+        this.consistentCommit = new SigmaProtocol(homomorphism, commitPair, 
                 new BigInteger[] {SECP256K1.getRandomBigInt(), SECP256K1.getRandomBigInt()},
                 ADDITIONAL_INPUT);
         
-        this.consistentAuxiliaryCommit = new SigmaProtocol(homomorphism, recommit, 
+        this.consistentAuxiliaryCommit = new SigmaProtocol(homomorphism, recommitPair, 
                 new BigInteger[] {SECP256K1.getRandomBigInt(), SECP256K1.getRandomBigInt()},
                 ADDITIONAL_INPUT);
         
